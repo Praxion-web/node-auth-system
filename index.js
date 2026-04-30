@@ -1,1 +1,5 @@
-console.log("start of backend project");
+import dotenv from "dotenv";
+
+process.username;
+
+console.log("start an awesome backend project");
