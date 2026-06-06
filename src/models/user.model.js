@@ -1,6 +1,9 @@
 import mongoose, { Schema } from "mongoose";
+// import bcrypt from "bcrypt";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import JWT from "jsonwebtoken";
+
 const userSchema = new Schema(
   {
     avatar: {
@@ -71,40 +74,49 @@ const userSchema = new Schema(
   },
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+// Hash password before save
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
+// Compare password
 userSchema.methods.isPasswordCorrect = async function (password) {
-  bcrypt.compare(password, this.password);
+  return await bcrypt.compare(password, this.password);
 };
 
+// Generate Access Token
 userSchema.methods.generateAccessToken = function () {
   return JWT.sign(
     {
-      _id: this_id,
+      _id: this._id,
       email: this.email,
       username: this.username,
     },
-    process.env.ACESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACESS_TOKEN_EXPIRY },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    },
   );
-
-  userSchema.methods.generateRefreshToken = function () {
-    return JWT.sign(
-      {
-        _id: this._id,
-        email: this.email,
-        username: this.username,
-      },
-      process.env.REFRESH_TOKEN_SCREET,
-      { expiresIn: process.env.REFRESH_TOKEN_EXPIRY },
-    );
-  };
 };
 
+// Generate Refresh Token
+userSchema.methods.generateRefreshToken = function () {
+  return JWT.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      username: this.username,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    },
+  );
+};
+
+// Generate Temporary Token
 userSchema.methods.generateTemporaryToken = function () {
   const unhashedToken = crypto.randomBytes(20).toString("hex");
 
@@ -113,8 +125,13 @@ userSchema.methods.generateTemporaryToken = function () {
     .update(unhashedToken)
     .digest("hex");
 
-  const tokenExpiry = Date.now() + 20 * 60 * 1000; //20minutes
-  return { unhashedToken, hashedToken, tokenExpiry };
+  const tokenExpiry = Date.now() + 20 * 60 * 1000;
+
+  return {
+    unhashedToken,
+    hashedToken,
+    tokenExpiry,
+  };
 };
 
 export const User = mongoose.model("User", userSchema);
