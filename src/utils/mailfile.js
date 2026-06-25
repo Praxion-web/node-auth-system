@@ -2,7 +2,7 @@ import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
 
 const sendEmail = async (options) => {
-  const mailgenerator = new Mailgen({
+  const mailGenerator = new Mailgen({
     theme: "default",
 
     product: {
@@ -12,16 +12,16 @@ const sendEmail = async (options) => {
   });
 
   // Generate plain text email
-  const emailTextual = mailgenerator.generatePlaintext(options.mailgenContent);
+  const emailTextual = mailGenerator.generatePlaintext(options.mailgenContent);
 
   // Generate HTML email
-  const emailHTML = mailgenerator.generate(options.mailgenContent);
+  const emailHTML = mailGenerator.generate(options.mailgenContent);
 
   // Create transporter
   const transporter = nodemailer.createTransport({
     host: process.env.MAILTRAP_SMTP_HOST,
 
-    port: Number(process.env.MAILTRAP_SMTP_PORT),
+    port: process.env.MAILTRAP_SMTP_PORT,
 
     auth: {
       user: process.env.MAILTRAP_SMTP_USER,
@@ -50,10 +50,10 @@ const sendEmail = async (options) => {
     return response;
   } catch (error) {
     console.error(
-      "Email service failed. Make sure you provided your MAILTRAP credentials in the .env file.",
+      "Email service failed silently. Make sure you provided your MAILTRAP credentials in the .env file.",
     );
 
-    console.error(error);
+    console.error("Error", error);
   }
 };
 
